@@ -4,50 +4,28 @@ const { info } = require('../controller/info')
 const { SuccessModel, ErrorMode } = require('../models/resModel')
 // 1.创建一个路由容器
 const router = express.Router() // 2.把所有的路由都挂载到这个路由容器中
-
 router.post('/login', (req, res, next) => {
   const { username, password } = req.body
   const result = login(username, password)
-  return result.then(data => {
-    let arr = [];
-    let obj = {};
-    data.forEach(item => {
-      if (item.parent_id == 0) {
-        obj.name = item.name
-        obj.remark = item.remark
-        obj.children = 'null'
-        obj.id = item.id
-        obj.parent_id = item.parent_id
-        obj.created_id = item.created_id
-        obj.mender_id = item.mender_id
-        obj.props = item.props
-        obj.path = item.path
-        obj.icon = item.icon
-        obj.category = item.category
-        obj.prority = item.prority
-        obj.is_tentant = item.is_tentant
-        obj.router = item.router
-        obj.component = item.component
-        obj.redirect = item.redirect
-        obj.meta = item.meta
-        obj.params = item.params
-        arr.push(obj)
-      } else {
-        arr.forEach( x => {
-          if (x.id == item.parent_id) {
-            x.children = []
-          }
-        })
-      }
+  function treeData (data) {
+    let cloneData = JSON.parse(JSON.stringify(data))    // 对源数据深度克隆
+    return cloneData.filter(father=>{
+      let branchArr = cloneData.filter(child=>father.id == child.parent_id)    //返回每一项的子级数组
+      branchArr.length > 0 ? father.children = branchArr : ''   //如果存在子级，则给父级添加一个children属性，并赋值
+      return father.parent_id == 0;      //返回第一层
     });
-    console.log(arr,'obj')
-    return
-    if (data.username) {
+  }
+  return result.then(datas => {
+    let auths = treeData(datas)
+    if (auths[0].username) {
       // 设置session
       req.session.token = 'admin-token'
-      data.token = 'admin-token'
+      auths[0].token = 'admin-token'
+      let cc ={
+        auths: auths
+      }
       res.json(
-        new SuccessModel(data, '登录成功')
+        new SuccessModel(cc, '用户登录成功')
       )
       return
     }
@@ -70,4 +48,5 @@ router.post('/Info', (req, res, next) => {
     )
   })
 })
+
 module.exports = router

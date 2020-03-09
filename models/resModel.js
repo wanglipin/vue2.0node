@@ -23,7 +23,6 @@ class SuccessModel extends BaseModel {
 
 class ErrorModel extends BaseModel {
   constructor (data, message) {
-    console.log(data)
     super(data, message)
     this.success = false
   }
